@@ -1,25 +1,43 @@
 const path = require('path');
 const url = require('url');
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 
-let win;
+let mainWindow;
+
+const mainMenuTemplate = [{
+    label: 'File',
+    submenu: [{
+        label: 'Test',
+        click() {
+
+        }
+    }, {
+        label: 'Exit',
+        click() {
+            app.quit();
+        }
+    }]
+}];
 
 function createWindow() {
-    win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1366,
         height: 768,
         icon: __dirname + "/assets/img/icon.png"
     });
 
-    win.loadURL(url.format({
+    const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+    Menu.setApplicationMenu(mainMenu);
+
+    mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
         slashes: true,
     }));
 
-    //win.webContents.openDevTools();
+    //mainWindow.webContents.openDevTools();
 
-    win.on('closed', () => {
+    mainWindow.on('closed', () => {
         win = null;
     });
 }
