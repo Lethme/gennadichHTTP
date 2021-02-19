@@ -1,6 +1,6 @@
 const path = require('path');
 const url = require('url');
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 
 let mainWindow;
 
@@ -19,11 +19,32 @@ const mainMenuTemplate = [{
     }]
 }];
 
-function createWindow() {
+if (process.env.NODE_ENV !== 'production') {
+    mainMenuTemplate.push({
+        label: 'Developer Tools',
+        submenu: [{
+            label: 'Toggle DevTools',
+            accelerator: process.platform == 'darwin' ? 'Command+I' : 'Ctrl+I',
+            click(item, focusedWindow) {
+                focusedWindow.toggleDevTools();
+            }
+        }, {
+            role: 'reload'
+        }]
+    });
+}
+
+app.on('ready', () => {
     mainWindow = new BrowserWindow({
         width: 1366,
         height: 768,
-        icon: __dirname + "/assets/img/icon.png"
+        icon: __dirname + "/assets/img/icon.png",
+        slashes: true,
+        webPreferences: {
+            nativeWindowOpen: true,
+            nodeIntegrationInWorker: true,
+            nodeIntegration: true
+        }
     });
 
     const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
@@ -40,9 +61,7 @@ function createWindow() {
     mainWindow.on('closed', () => {
         win = null;
     });
-}
-
-app.on('ready', createWindow);
+});
 
 app.on('window-all-closed', () => {
     app.quit();

@@ -16,16 +16,40 @@
 </head>
 
 <body>
-    <webview id="page">
-        <h1>Test</h1>
-    </webview>
+    <div id="page">
+        <h1>Test Page</h1>
+        <h2 class='item'>Here should be your text</h2>
+        <form id="test_form">
+            <label>Enter Any Text</label>
+            <input type="text" id="item" autofocus>
+            <button type="submit">Send Text</button>
+        </form>
+    </div>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+
+    <script>
+        window.$ = window.jQuery = require('jquery');
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script src="./render.js"></script>
+
+    <script>
+        const electron = require('electron');
+        const {
+            ipcRenderer
+        } = electron;
+
+        const form = $('#test_form');
+        form.on('submit', (e) => {
+            e.preventDefault();
+            $('.item').empty().append($('#item').val());
+        });
+    </script>
 </body>
 
 </html>
