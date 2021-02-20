@@ -12,7 +12,9 @@
     "dependencies": {
         "autoprefixer": "^10.2.4",
         "electron": "^11.2.3",
+        "electron-save-file": "^1.0.2",
         "jquery": "^3.5.1",
+        "request": "^2.88.2",
         "uniq": "^1.0.1"
     }
 }

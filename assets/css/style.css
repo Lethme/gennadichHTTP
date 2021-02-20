@@ -39,7 +39,8 @@ body {
     text-align: center;
 }
 
-#test_form button {
+#test_form button,
+#test_form input {
     width: 50%;
     margin-top: 1rem;
 }

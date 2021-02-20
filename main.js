@@ -11,8 +11,8 @@ const mainMenuTemplate = [{
         label: 'Test',
         click() {
             testWindow = new BrowserWindow({
-                width: 400,
-                height: 250,
+                width: 500,
+                height: 350,
                 icon: __dirname + "/assets/img/icon.png",
                 slashes: true,
                 webPreferences: {
@@ -25,7 +25,7 @@ const mainMenuTemplate = [{
             testWindow.loadURL(url.format({
                 pathname: path.join(__dirname, 'form.html'),
                 protocol: 'file:',
-                slashes: true,
+                slashes: true
             }));
 
             testWindow.on('close', () => {
@@ -33,9 +33,59 @@ const mainMenuTemplate = [{
             });
         }
     }, {
+        label: 'Save File',
+        click() {
+            const { dialog } = require('electron');
+            const path = require('path');
+            const fs = require('fs');
+
+            dialog.showSaveDialog({
+                title: 'Select the File Path to save',
+                defaultPath: path.join(__dirname, '../assets/sample.txt'),
+                // defaultPath: path.join(__dirname, '../assets/'), 
+                buttonLabel: 'Save',
+                // Restricting the user to only Text Files. 
+                filters: [{
+                    name: 'Text Files',
+                    extensions: ['txt', 'docx']
+                }, ],
+                properties: []
+            }).then(file => {
+                // Stating whether dialog operation was cancelled or not. 
+                console.log(file.canceled);
+                if (!file.canceled) {
+                    console.log(file.filePath.toString());
+                    // Creating and Writing to the sample.txt file 
+                    fs.writeFile(file.filePath.toString(),
+                        'This is a Sample File',
+                        function(err) {
+                            if (err) throw err;
+                            console.log('Saved!');
+                        });
+                }
+            }).catch(err => {
+                console.log(err)
+            });
+        }
+    }, {
         label: 'Exit',
         click() {
             app.quit();
+        }
+    }]
+}, {
+    label: 'HTTP',
+    submenu: [{
+        label: 'Get Test Page',
+        click() {
+            const request = require('request');
+            request('http://lab.volpi.ru/examples/testpage.htm', (error, response, body) => {
+                console.error('error:', error); // Print the error if one occurred
+                console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+                console.log('body:', body); // Print the HTML for the Google homepage.
+
+                //<link[\s]+([^>]+)>
+            });
         }
     }]
 }];
@@ -45,7 +95,7 @@ if (process.env.NODE_ENV !== 'production') {
         label: 'Developer Tools',
         submenu: [{
             label: 'Toggle DevTools',
-            accelerator: process.platform == 'darwin' ? 'Command+I' : 'Ctrl+I',
+            accelerator: 'CmdOrCtrl+I',
             click(item, focusedWindow) {
                 focusedWindow.toggleDevTools();
             }
