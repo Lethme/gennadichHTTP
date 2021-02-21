@@ -33,42 +33,8 @@ const mainMenuTemplate = [{
             });
         }
     }, {
-        label: 'Save File',
-        click() {
-            const { dialog } = require('electron');
-            const path = require('path');
-            const fs = require('fs');
-
-            dialog.showSaveDialog({
-                title: 'Select the File Path to save',
-                defaultPath: path.join(__dirname, '../assets/sample.txt'),
-                // defaultPath: path.join(__dirname, '../assets/'), 
-                buttonLabel: 'Save',
-                // Restricting the user to only Text Files. 
-                filters: [{
-                    name: 'Text Files',
-                    extensions: ['txt', 'docx']
-                }, ],
-                properties: []
-            }).then(file => {
-                // Stating whether dialog operation was cancelled or not. 
-                console.log(file.canceled);
-                if (!file.canceled) {
-                    console.log(file.filePath.toString());
-                    // Creating and Writing to the sample.txt file 
-                    fs.writeFile(file.filePath.toString(),
-                        'This is a Sample File',
-                        function(err) {
-                            if (err) throw err;
-                            console.log('Saved!');
-                        });
-                }
-            }).catch(err => {
-                console.log(err)
-            });
-        }
-    }, {
         label: 'Exit',
+        accelerator: 'CmdOrCtrl+Q',
         click() {
             app.quit();
         }
@@ -84,7 +50,12 @@ const mainMenuTemplate = [{
                 console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
                 console.log('body:', body); // Print the HTML for the Google homepage.
 
-                //<link[\s]+([^>]+)>
+                //saveFile('testpage', body);
+
+                let links = body.match(/<link[\s]+([^>]+)>/gm);
+
+                // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
+                console.log(links);
             });
         }
     }]
@@ -142,3 +113,36 @@ ipcMain.on('item:test', (e, item) => {
 app.on('window-all-closed', () => {
     app.quit();
 });
+
+function saveFile(filename, content) {
+    const { dialog } = require('electron');
+    const path = require('path');
+    const fs = require('fs')
+    dialog.showSaveDialog({
+        title: 'Select the File Path to save',
+        defaultPath: path.join(__dirname, '../assets/' + filename + '.txt'),
+        // defaultPath: path.join(__dirname, '../assets/'), 
+        buttonLabel: 'Save',
+        // Restricting the user to only Text Files. 
+        filters: [{
+            name: 'Text Files',
+            extensions: ['txt', 'docx']
+        }, ],
+        properties: []
+    }).then(file => {
+        // Stating whether dialog operation was cancelled or not. 
+        console.log(file.canceled);
+        if (!file.canceled) {
+            console.log(file.filePath.toString());
+            // Creating and Writing to the sample.txt file 
+            fs.writeFile(file.filePath.toString(),
+                content,
+                function(err) {
+                    if (err) throw err;
+                    console.log('Saved as "' + file.filePath + '"');
+                });
+        }
+    }).catch(err => {
+        console.log(err)
+    });
+}
