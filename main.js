@@ -46,9 +46,9 @@ const mainMenuTemplate = [{
         click() {
             const request = require('request');
             request('http://lab.volpi.ru/examples/testpage.htm', (error, response, body) => {
-                console.error('error:', error); // Print the error if one occurred
-                console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-                console.log('body:', body); // Print the HTML for the Google homepage.
+                console.error('error:', error);
+                console.log('statusCode:', response && response.statusCode);
+                console.log(body);
 
                 //saveFile('testpage', body);
 
@@ -58,13 +58,23 @@ const mainMenuTemplate = [{
                 if (link_tags !== null) {
                     link_tags.forEach(link => {
                         let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
-                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) links.push(temp_array[2]);
+                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
+                            const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0)
+                            if (isUrlAbsolute(temp_array[2])) {
+                                links.push(temp_array[2]);
+                            } else {
+                                const url = require('url');
+                                links.push(url.resolve('http://lab.volpi.ru/examples/', temp_array[2]));
+                                //links.push(new URL(temp_array[2], 'http://lab.volpi.ru/examples/').href);
+                            }
+                        }
                     });
                 }
 
-                mainWindow.webContents.send('http:body', body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;'), links);
+                mainWindow.webContents.send('http:body', body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;'), links, link_tags);
 
                 // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
+                console.log(link_tags);
                 console.log(links);
             });
         }

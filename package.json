@@ -5,7 +5,10 @@
     "main": "main.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "electron ."
+        "start": "electron .",
+        "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/img/icon.icns --prune=true --out=release-builds",
+        "package-win": "electron-packager . http --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/img/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"http\"",
+        "package-linux": "electron-packager . http --overwrite --asar=true --platform=linux --arch=x64 --icon=assets/img/icon.png --prune=true --out=release-builds"
     },
     "author": "",
     "license": "ISC",
@@ -16,5 +19,8 @@
         "jquery": "^3.5.1",
         "request": "^2.88.2",
         "uniq": "^1.0.1"
+    },
+    "devDependencies": {
+        "electron-packager": "^15.2.0"
     }
 }
