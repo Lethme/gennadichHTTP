@@ -52,7 +52,12 @@ const mainMenuTemplate = [{
 
                 //saveFile('testpage', body);
 
-                let links = body.match(/<link[\s]+([^>]+)>/gm);
+                let links = [];
+
+                body.match(/<link[\s]+([^>]+)>/gm).forEach(link => {
+                    let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
+                    if (temp_array[2].includes('.css')) links.push(temp_array[2]);
+                });
 
                 // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
                 console.log(links);
