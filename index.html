@@ -94,7 +94,7 @@
                     link_tags.forEach(link => {
                         let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
                         if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
-                            const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0)
+                            const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
                             if (isUrlAbsolute(temp_array[2])) {
                                 links.push(temp_array[2]);
                             } else {
