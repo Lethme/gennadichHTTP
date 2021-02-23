@@ -53,11 +53,16 @@ const mainMenuTemplate = [{
                 //saveFile('testpage', body);
 
                 let links = [];
+                let link_tags = body.match(/<link[\s]+([^>]+)>/gm);
 
-                body.match(/<link[\s]+([^>]+)>/gm).forEach(link => {
-                    let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
-                    if (temp_array[2].includes('.css')) links.push(temp_array[2]);
-                });
+                if (link_tags !== null) {
+                    link_tags.forEach(link => {
+                        let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
+                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) links.push(temp_array[2]);
+                    });
+                }
+
+                mainWindow.webContents.send('http:body', body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;'), links);
 
                 // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
                 console.log(links);
