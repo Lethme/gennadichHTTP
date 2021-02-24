@@ -1,7 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;600;700&display=swap');
 *,
 *::before,
 *::after {
     box-sizing: border-box;
+}
+
+.fs-consolas {
+    font-family: Consolas, monaco, monospace;
+}
+
+.fs-montserrat {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.fs-source-code {
+    font-family: 'Source Code Pro', monospace;
+}
+
+.fs-arimo {
+    font-family: 'Arimo', sans-serif;
 }
 
 body {
@@ -21,9 +40,10 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    padding: 0px 15px;
 }
 
-.page h1 {
+#page h1 {
     text-align: center !important;
 }
 

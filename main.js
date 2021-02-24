@@ -109,7 +109,7 @@ ipcMain.on('request:content', (e, uri) => {
 
             // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
 
-            saveFile(path.join(dir.filePaths[0], 'output.txt'), '');
+            saveFile(path.join(dir.filePaths[0], 'save.log'), '');
             links.forEach(link => {
                 request({
                     uri: link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link,
@@ -122,8 +122,8 @@ ipcMain.on('request:content', (e, uri) => {
                     let res = response && response.statusCode;
 
                     saveFile(
-                        path.join(dir.filePaths[0], 'output.txt'),
-                        'Uri: ' + link + '\n' +
+                        path.join(dir.filePaths[0], 'save.log'),
+                        'URI: ' + link + '\n' +
                         'StatusCode: ' + res + '\n' +
                         'Error: ' + err + '\n\n',
                         true
@@ -133,7 +133,7 @@ ipcMain.on('request:content', (e, uri) => {
 
                     mainWindow.webContents.send(
                         'request:result',
-                        'Uri: ' + temp_uri,
+                        'URI: ' + temp_uri,
                         'StatusCode: ' + res,
                         'Error: ' + err
                     );
