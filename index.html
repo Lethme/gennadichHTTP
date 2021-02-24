@@ -16,29 +16,27 @@
     <link rel="stylesheet" href="./assets/css/style.css">
 
     <title>HTTP</title>
-
-    <style>
-        .page_code {
-            width: 100%;
-            max-width: 1300px;
-            height: 100%;
-            max-height: 900px;
-            overflow: auto;
-            margin: 15px;
-            padding: 10px;
-            border: 2px solid black;
-            text-align: left;
-        }
-    </style>
 </head>
 
 <body>
     <div id="page">
-        <h1>Test Page</h1>
-        <h4 class='item'>Here should be your text</h4>
+        <h3>HTTP Client</h3>
+        <form id="test_form">
+            <label style="font-size: 1.5em;">Enter File URI</label>
+            <input type="text" id="uri" value="http://lab.volpi.ru/examples/testpage.htm" autofocus>
+            <button class="form-btn" type="submit" name="action">Send Request</button>
+        </form>
     </div>
 
-    <div class="page_code"></div>
+    <div class="output">
+        <div class="flex-row">
+            <div class="page_links" style="width: 65%;"></div>
+            <div class="page_out" style="width: 35%;"></div>
+        </div>
+        <div class="flex-row">
+            <div class="page_code"></div>
+        </div>
+    </div>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -56,75 +54,43 @@
     <script>
         const electron = require('electron');
         const {
-            ipcRenderer
+            ipcRenderer,
+            dialog
         } = electron;
 
-        ipcRenderer.on('item:test', (e, item) => {
-            $('.item').html(item);
-            getPageCode(item);
+        $('#test_form').on('submit', (e) => {
+            e.preventDefault();
+            const valid_url = require('valid-url');
+            let uri = $('#uri').val();
+            if (valid_url.isUri(uri) === undefined) {
+                uri = 'http://' + uri;
+                $('#uri').val(uri);
+            }
+            ipcRenderer.send('request:content', uri);
         });
 
         ipcRenderer.on('http:body', (e, body, links, link_tags) => {
-            $('.page_code').empty().append('<p>' + body + '</p><br>');
+            $('.page_code').empty().append('<p>' + body + '</p>');
+            $('.page_out').empty();
+            $('.page_links').empty();
+
+            $('.page_links').append('<p class="link_tags">');
 
             link_tags.forEach(link_tag => {
-                $('.page_code').append('<p>"' + link_tag.replace(/</gm, '&lt;').replace(/>/gm, '&gt;') + '"</p>');
+                $('.link_tags').append(link_tag.replace(/</gm, '&lt;').replace(/>/gm, '&gt;') + '<br>');
             });
 
-            $('.page_code').append('<br>');
+            $('.page_links').append('<br>');
+            $('.page_links').append('<p class="links">');
 
             links.forEach(link => {
-                $('.page_code').append('<p>"' + link + '"</p>');
+                $('.links').append(link + '<br>');
             });
         });
 
-        function getPageCode(host) {
-            const request = require('request');
-            request(host, (error, response, body) => {
-                console.error('error:', error);
-                console.log('statusCode:', response && response.statusCode);
-                console.log(body);
-
-                //saveFile('testpage', body);
-
-                let links = [];
-                let link_tags = body.match(/<link[\s]+([^>]+)>/gm);
-
-                if (link_tags !== null) {
-                    link_tags.forEach(link => {
-                        let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
-                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
-                            const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
-                            if (isUrlAbsolute(temp_array[2])) {
-                                links.push(temp_array[2]);
-                            } else {
-                                const url = require('url');
-                                links.push(url.resolve(host, temp_array[2]));
-                                //links.push(new URL(temp_array[2], 'http://lab.volpi.ru/examples/').href);
-                            }
-                        }
-                    });
-                }
-
-                let temp_body = body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;');
-
-                $('.page_code').empty().append('<p>' + temp_body + '</p><br>');
-
-                link_tags.forEach(link_tag => {
-                    $('.page_code').append('<p>"' + link_tag.replace(/</gm, '&lt;').replace(/>/gm, '&gt;') + '"</p>');
-                });
-
-                $('.page_code').append('<br>');
-
-                links.forEach(link => {
-                    $('.page_code').append('<p>"' + link + '"</p>');
-                });
-
-                // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
-                console.log(link_tags);
-                console.log(links);
-            });
-        }
+        ipcRenderer.on('request:result', (e, uri, response, err) => {
+            $('.page_out').append('<p>' + uri + '<br>' + response + '<br>' + err + ' ' + '</p>');
+        });
     </script>
 </body>
 

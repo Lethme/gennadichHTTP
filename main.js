@@ -1,5 +1,6 @@
 const path = require('path');
 const url = require('url');
+const valid_url = require('valid-url');
 const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 
 let mainWindow;
@@ -8,6 +9,14 @@ let testWindow;
 const mainMenuTemplate = [{
     label: 'File',
     submenu: [{
+        label: "Save test file",
+        click() {
+            const { dialog } = require('electron');
+            dialog.showOpenDialog({ properties: ["openDirectory"] }).then(dir => {
+                saveFile(path.join(dir.filePaths[0], 'test.txt'), 'Some text');
+            });
+        }
+    }, {
         label: 'Test',
         click() {
             testWindow = new BrowserWindow({
@@ -37,46 +46,6 @@ const mainMenuTemplate = [{
         accelerator: 'CmdOrCtrl+Q',
         click() {
             app.quit();
-        }
-    }]
-}, {
-    label: 'HTTP',
-    submenu: [{
-        label: 'Get Test Page',
-        click() {
-            const request = require('request');
-            request('http://lab.volpi.ru/examples/testpage.htm', (error, response, body) => {
-                console.error('error:', error);
-                console.log('statusCode:', response && response.statusCode);
-                console.log(body);
-
-                //saveFile('testpage', body);
-
-                let links = [];
-                let link_tags = body.match(/<link[\s]+([^>]+)>/gm);
-
-                if (link_tags !== null) {
-                    link_tags.forEach(link => {
-                        let temp_array = (new RegExp(/href=(["'])(.*?)\1/g)).exec(link);
-                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
-                            const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
-                            if (isUrlAbsolute(temp_array[2])) {
-                                links.push(temp_array[2]);
-                            } else {
-                                const url = require('url');
-                                links.push(url.resolve('http://lab.volpi.ru/examples/', temp_array[2]));
-                                //links.push(new URL(temp_array[2], 'http://lab.volpi.ru/examples/').href);
-                            }
-                        }
-                    });
-                }
-
-                mainWindow.webContents.send('http:body', body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;'), links, link_tags);
-
-                // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
-                console.log(link_tags);
-                console.log(links);
-            });
         }
     }]
 }];
@@ -130,11 +99,104 @@ ipcMain.on('item:test', (e, item) => {
     mainWindow.webContents.send('item:test', item);
 });
 
+ipcMain.on('request:content', (e, uri) => {
+    //if (valid_url.isUri(uri) === undefined) uri = 'http://' + uri;
+    const { dialog } = require('electron');
+    dialog.showOpenDialog({
+        properties: ["openDirectory"]
+    }).then(dir => {
+        const request = require('request');
+        request({
+            uri: uri.indexOf('//') == 0 ? 'https:' + uri : uri,
+            method: 'GET',
+            rejectUnauthorized: false,
+            requestCert: true,
+            agent: false,
+            strictSSL: false
+        }, (error, response, body) => {
+            // console.error('error:', error);
+            // console.log('statusCode:', response && response.statusCode);
+            // console.log(body);
+
+            //saveFile('testpage', body);
+
+            let links = [];
+            let link_tags = body.match(/<link[\s]+([^>]+)>/gmi);
+
+            if (link_tags !== null) {
+                link_tags.forEach(link => {
+                    let temp_array = (new RegExp(/href=(["'])(.*?)\1/gi)).exec(link);
+                    if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
+                        const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
+                        if (isUrlAbsolute(temp_array[2])) {
+                            links.push(temp_array[2]);
+                        } else {
+                            const url = require('url');
+                            links.push(url.resolve(uri, temp_array[2]));
+                            //links.push(new URL(temp_array[2], 'http://lab.volpi.ru/examples/').href);
+                        }
+                    }
+                });
+            }
+
+            mainWindow.webContents.send(
+                'http:body',
+                body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;'),
+                links,
+                link_tags
+            );
+
+            // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
+
+            saveFile(path.join(dir.filePaths[0], 'output.txt'), '');
+            links.forEach(link => {
+                request({
+                    uri: link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link,
+                    method: 'GET',
+                    rejectUnauthorized: false,
+                    requestCert: true,
+                    agent: false,
+                    strictSSL: false
+                }, (err, response, content) => {
+                    let res = response && response.statusCode;
+
+                    saveFile(
+                        path.join(dir.filePaths[0], 'output.txt'),
+                        'Uri: ' + link + '\n' +
+                        'StatusCode: ' + res + '\n' +
+                        'Error: ' + err + '\n\n',
+                        true
+                    );
+
+                    let temp_uri = link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link;
+
+                    mainWindow.webContents.send(
+                        'request:result',
+                        'Uri: ' + temp_uri,
+                        'StatusCode: ' + res,
+                        'Error: ' + err
+                    );
+
+                    if (err === null && response.statusCode.toString()[0] === '2') {
+                        saveFile(
+                            path.join(
+                                dir.filePaths[0],
+                                path.basename(link).includes('?') ? path.basename(link).substring(0, path.basename(link).indexOf('?')) : path.basename(link)
+                            ),
+                            content
+                        );
+                    }
+                });
+            });
+        });
+    });
+});
+
 app.on('window-all-closed', () => {
     app.quit();
 });
 
-function saveFile(filename, content) {
+function saveFileDialog(filename, content) {
     const { dialog } = require('electron');
     const path = require('path');
     const fs = require('fs')
@@ -165,4 +227,21 @@ function saveFile(filename, content) {
     }).catch(err => {
         console.log(err)
     });
+}
+
+function saveFile(filename, content, append = false) {
+    const path = require('path');
+    const fs = require('fs');
+
+    if (append) {
+        fs.appendFile(filename, content, (err) => {
+            if (err) console.log(err.code + ': ' + err.message);
+            else console.log('Appended: ' + filename);
+        });
+    } else {
+        fs.writeFile(filename, content, (err) => {
+            if (err) console.log(err.code + ': ' + err.message);
+            else console.log('Saved: ' + filename);
+        });
+    }
 }
