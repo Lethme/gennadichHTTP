@@ -47,6 +47,11 @@ body {
     margin-top: 1rem;
 }
 
+#uri::selection {
+    background: #2abbac;
+    color: white;
+}
+
 .output {
     width: 98%;
     height: 100%;

@@ -58,6 +58,15 @@
             dialog
         } = electron;
 
+        $('#uri').on('blur', (e) => {
+            const valid_url = require('valid-url');
+            let uri = $('#uri').val();
+            if (valid_url.isUri(uri) === undefined) {
+                uri = 'http://' + uri;
+                $('#uri').val(uri);
+            }
+        });
+
         $('#test_form').on('submit', (e) => {
             e.preventDefault();
             $('#test_form button').blur();
