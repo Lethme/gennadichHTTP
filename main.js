@@ -4,44 +4,12 @@ const valid_url = require('valid-url');
 const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 
 let mainWindow;
-let testWindow;
+
+//process.env.NODE_ENV = 'production';
 
 const mainMenuTemplate = [{
     label: 'File',
     submenu: [{
-        label: "Save test file",
-        click() {
-            const { dialog } = require('electron');
-            dialog.showOpenDialog({ properties: ["openDirectory"] }).then(dir => {
-                saveFile(path.join(dir.filePaths[0], 'test.txt'), 'Some text');
-            });
-        }
-    }, {
-        label: 'Test',
-        click() {
-            testWindow = new BrowserWindow({
-                width: 500,
-                height: 350,
-                icon: __dirname + "/assets/img/icon.png",
-                slashes: true,
-                webPreferences: {
-                    nativeWindowOpen: true,
-                    nodeIntegrationInWorker: true,
-                    nodeIntegration: true
-                }
-            });
-
-            testWindow.loadURL(url.format({
-                pathname: path.join(__dirname, 'form.html'),
-                protocol: 'file:',
-                slashes: true
-            }));
-
-            testWindow.on('close', () => {
-                testWindow = null;
-            });
-        }
-    }, {
         label: 'Exit',
         accelerator: 'CmdOrCtrl+Q',
         click() {
@@ -100,7 +68,6 @@ ipcMain.on('item:test', (e, item) => {
 });
 
 ipcMain.on('request:content', (e, uri) => {
-    //if (valid_url.isUri(uri) === undefined) uri = 'http://' + uri;
     const { dialog } = require('electron');
     dialog.showOpenDialog({
         properties: ["openDirectory"]
@@ -114,12 +81,6 @@ ipcMain.on('request:content', (e, uri) => {
             agent: false,
             strictSSL: false
         }, (error, response, body) => {
-            // console.error('error:', error);
-            // console.log('statusCode:', response && response.statusCode);
-            // console.log(body);
-
-            //saveFile('testpage', body);
-
             let links = [];
             let link_tags = body.match(/<link[\s]+([^>]+)>/gmi);
 
@@ -195,39 +156,6 @@ ipcMain.on('request:content', (e, uri) => {
 app.on('window-all-closed', () => {
     app.quit();
 });
-
-function saveFileDialog(filename, content) {
-    const { dialog } = require('electron');
-    const path = require('path');
-    const fs = require('fs')
-    dialog.showSaveDialog({
-        title: 'Select the File Path to save',
-        defaultPath: path.join(__dirname, '../assets/' + filename + '.txt'),
-        // defaultPath: path.join(__dirname, '../assets/'), 
-        buttonLabel: 'Save',
-        // Restricting the user to only Text Files. 
-        filters: [{
-            name: 'Text Files',
-            extensions: ['txt', 'docx']
-        }, ],
-        properties: []
-    }).then(file => {
-        // Stating whether dialog operation was cancelled or not. 
-        console.log(file.canceled);
-        if (!file.canceled) {
-            console.log(file.filePath.toString());
-            // Creating and Writing to the sample.txt file 
-            fs.writeFile(file.filePath.toString(),
-                content,
-                function(err) {
-                    if (err) throw err;
-                    console.log('Saved as "' + file.filePath + '"');
-                });
-        }
-    }).catch(err => {
-        console.log(err)
-    });
-}
 
 function saveFile(filename, content, append = false) {
     const path = require('path');
