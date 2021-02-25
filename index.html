@@ -38,6 +38,12 @@
         </div>
     </div>
 
+    <div class="loader">
+        <object class="loading-svg" type="image/svg+xml" data="./assets/img/loading.svg">
+            Here should be a loading image but something went wrong...
+         </object>
+    </div>
+
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
@@ -64,6 +70,14 @@
                 uri = 'http://' + uri;
                 $('#uri').val(uri);
             }
+        });
+
+        ipcRenderer.on('loader:start', (e) => {
+            $('.loader').css('display', 'flex');
+        });
+
+        ipcRenderer.on('loader:stop', (e) => {
+            $('.loader').hide();
         });
 
         $('#test_form').on('submit', (e) => {
@@ -98,10 +112,13 @@
         });
 
         ipcRenderer.on('request:result', (e, uri, response, err) => {
-            $('.page_out').append('<p>' + 'URI: <a class="link" href="' + uri + '">' + uri + '</a><br>' + response + '<br>' + err + ' ' + '</p>');
-            $('.link').last().on('click', () => {
+            $('.page_out').append('<p>' + 'URI: <a class="link" href="#">' + uri + '</a><br>' + response + '<br>' + err + ' ' + '</p>');
+            $('.link').last().on('click', (e) => {
                 const open = require('open');
                 open(uri);
+                (async() => {
+                    await open(uri);
+                })();
             });
         });
     </script>

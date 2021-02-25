@@ -1,7 +1,9 @@
 const path = require('path');
 const url = require('url');
 const valid_url = require('valid-url');
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const fs = require('fs');
+const request = require('request');
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 
 let mainWindow;
 
@@ -18,20 +20,7 @@ const mainMenuTemplate = [{
     }, {
         label: 'Test',
         click() {
-            const { dialog } = require('electron');
-            dialog.showMessageBox({
-                type: 'question',
-                buttons: ['Yes', 'No'],
-                defaultId: 1,
-                title: 'Question',
-                message: 'Do you want to do this?',
-                detail: 'It does not really matter',
-                noLink: true
-            }).then((box) => {
-                console.log(box.response);
-            }).catch((err) => {
-                console.log(err);
-            });
+            mainWindow.webContents.send('loader:start');
         }
     }]
 }];
@@ -86,86 +75,119 @@ ipcMain.on('item:test', (e, item) => {
 });
 
 ipcMain.on('request:content', (e, uri) => {
-    const { dialog } = require('electron');
     dialog.showOpenDialog({
         properties: ["openDirectory"]
     }).then(dir => {
         if (dir.canceled) return;
-        const request = require('request');
-        request({
-            uri: uri.indexOf('//') == 0 ? 'https:' + uri : uri,
-            method: 'GET',
-            rejectUnauthorized: false,
-            requestCert: true,
-            agent: false,
-            strictSSL: false
-        }, (error, response, body) => {
-            let links = [];
-            let link_tags = body && body !== '' ? body.match(/<link[\s]+([^>]+)>/gmi) : [];
 
-            if (link_tags !== null) {
-                link_tags.forEach(link => {
-                    let temp_array = (new RegExp(/href=(["'])(.*?)\1/gi)).exec(link);
-                    if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
-                        const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
-                        if (isUrlAbsolute(temp_array[2])) {
-                            links.push(temp_array[2].indexOf('//') == 0 ? (new URL(uri)).protocol + temp_array[2] : temp_array[2]);
-                        } else {
-                            const url = require('url');
-                            links.push(url.resolve(uri, temp_array[2]));
-                        }
-                    }
+        fs.readdir(dir.filePaths[0], (err, files) => {
+            if (err) return;
+
+            if (files.length !== 0) {
+                let result = dialog.showMessageBoxSync({
+                    type: 'question',
+                    buttons: ['Yes', 'No'],
+                    defaultId: 1,
+                    title: 'Directory is not empty',
+                    message: 'Do you want to continue?',
+                    detail: 'Application will still save its files to choosen directory',
+                    noLink: true
                 });
+
+                if (result === 1) return;
             }
 
-            mainWindow.webContents.send(
-                'http:body',
-                body ? body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;') : '',
-                links,
-                link_tags
-            );
+            showLoader();
+            request({
+                uri: uri.indexOf('//') == 0 ? 'https:' + uri : uri,
+                method: 'GET',
+                rejectUnauthorized: false,
+                requestCert: true,
+                agent: false,
+                strictSSL: false
+            }, (error, response, body) => {
+                if (error && error.toString().includes('ENOTFOUND')) {
+                    hideLoader();
+                    dialog.showMessageBoxSync({
+                        type: 'error',
+                        buttons: ['Ok'],
+                        defaultId: 0,
+                        title: 'Request error',
+                        message: 'Invalid URI',
+                        detail: 'Did you write URI correctly?',
+                        noLink: true
+                    });
+                    return;
+                }
 
-            // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
+                let links = [];
+                let link_tags = body && body !== '' ? body.match(/<link[\s]+([^>]+)>/gmi) : [];
 
-            if (links.length !== 0) saveFile(path.join(dir.filePaths[0], 'save.log'), '');
-            links.forEach(link => {
-                request({
-                    uri: link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link,
-                    method: 'GET',
-                    rejectUnauthorized: false,
-                    requestCert: true,
-                    agent: false,
-                    strictSSL: false
-                }, (err, response, content) => {
-                    let res = response && response.statusCode;
+                if (link_tags !== null) {
+                    link_tags.forEach(link => {
+                        let temp_array = (new RegExp(/href=(["'])(.*?)\1/gi)).exec(link);
+                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
+                            const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
+                            if (isUrlAbsolute(temp_array[2])) {
+                                links.push(temp_array[2].indexOf('//') == 0 ? (new URL(uri)).protocol + temp_array[2] : temp_array[2]);
+                            } else {
+                                links.push(url.resolve(uri, temp_array[2]));
+                            }
+                        }
+                    });
+                }
 
-                    saveFile(
-                        path.join(dir.filePaths[0], 'save.log'),
-                        'URI: ' + link + '\n' +
-                        'StatusCode: ' + res + '\n' +
-                        'Error: ' + err + '\n\n',
-                        true
-                    );
+                mainWindow.webContents.send(
+                    'http:body',
+                    body ? body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;') : '',
+                    links,
+                    link_tags
+                );
 
-                    let temp_uri = link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link;
+                // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
 
-                    mainWindow.webContents.send(
-                        'request:result',
-                        temp_uri,
-                        'StatusCode: ' + res,
-                        'Error: ' + err
-                    );
+                if (links.length !== 0) saveFile(path.join(dir.filePaths[0], 'save.log'), '');
+                links.forEach(link => {
+                    request({
+                        uri: link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link,
+                        method: 'GET',
+                        rejectUnauthorized: false,
+                        requestCert: true,
+                        agent: false,
+                        strictSSL: false
+                    }, (err, response, content) => {
+                        let res = response && response.statusCode;
 
-                    if (err === null && response.statusCode.toString()[0] === '2') {
                         saveFile(
-                            path.join(
-                                dir.filePaths[0],
-                                path.basename(link).includes('?') ? path.basename(link).substring(0, path.basename(link).indexOf('?')) : path.basename(link)
-                            ),
-                            content
+                            path.join(dir.filePaths[0], 'save.log'),
+                            'URI: ' + link + '\n' +
+                            'StatusCode: ' + res + '\n' +
+                            'Error: ' + err + '\n\n',
+                            true
                         );
-                    }
+
+                        let temp_uri = link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link;
+
+                        mainWindow.webContents.send(
+                            'request:result',
+                            temp_uri,
+                            'StatusCode: ' + res,
+                            'Error: ' + err
+                        );
+
+                        if (err === null && response.statusCode.toString().match(/^2\d\d$/)) {
+                            saveFile(
+                                path.join(
+                                    dir.filePaths[0],
+                                    path.basename(link).includes('?') ? path.basename(link).substring(0, path.basename(link).indexOf('?')) : path.basename(link)
+                                ),
+                                content
+                            );
+                        }
+                    });
                 });
+
+                hideLoader();
             });
         });
     });
@@ -176,9 +198,6 @@ app.on('window-all-closed', () => {
 });
 
 function saveFile(filename, content, append = false) {
-    const path = require('path');
-    const fs = require('fs');
-
     if (append) {
         fs.appendFile(filename, content, (err) => {
             if (err) console.log(err.code + ': ' + err.message);
@@ -191,3 +210,7 @@ function saveFile(filename, content, append = false) {
         });
     }
 }
+
+function showLoader() { mainWindow.webContents.send('loader:start'); }
+
+function hideLoader() { mainWindow.webContents.send('loader:stop'); }
