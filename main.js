@@ -97,7 +97,6 @@ ipcMain.on('request:content', (e, uri) => {
                 if (result === 1) return;
             }
 
-            showLoader();
             request({
                 uri: uri.indexOf('//') == 0 ? 'https:' + uri : uri,
                 method: 'GET',
@@ -146,6 +145,8 @@ ipcMain.on('request:content', (e, uri) => {
 
                 // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
 
+                let request_count = links.length;
+
                 if (links.length !== 0) saveFile(path.join(dir.filePaths[0], 'save.log'), '');
                 links.forEach(link => {
                     request({
@@ -186,8 +187,6 @@ ipcMain.on('request:content', (e, uri) => {
                         }
                     });
                 });
-
-                hideLoader();
             });
         });
     });

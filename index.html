@@ -111,7 +111,7 @@
             });
         });
 
-        ipcRenderer.on('request:result', (e, uri, response, err, rc) => {
+        ipcRenderer.on('request:result', (e, uri, response, err) => {
             $('.page_out').append('<p>' + 'URI: <a class="link" href="#">' + uri + '</a><br>' + response + '<br>' + err + ' ' + '</p>');
             $('.link').last().on('click', (e) => {
                 const open = require('open');
@@ -120,7 +120,6 @@
                     await open(uri);
                 })();
             });
-            if (rc === 0) ipcRenderer.send('request:end');
         });
     </script>
 </body>
