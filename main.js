@@ -17,11 +17,6 @@ const mainMenuTemplate = [{
         click() {
             app.quit();
         }
-    }, {
-        label: 'Test',
-        click() {
-            mainWindow.webContents.send('loader:start');
-        }
     }]
 }];
 
