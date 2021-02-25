@@ -15,6 +15,24 @@ const mainMenuTemplate = [{
         click() {
             app.quit();
         }
+    }, {
+        label: 'Test',
+        click() {
+            const { dialog } = require('electron');
+            dialog.showMessageBox({
+                type: 'question',
+                buttons: ['Yes', 'No'],
+                defaultId: 1,
+                title: 'Question',
+                message: 'Do you want to do this?',
+                detail: 'It does not really matter',
+                noLink: true
+            }).then((box) => {
+                console.log(box.response);
+            }).catch((err) => {
+                console.log(err);
+            });
+        }
     }]
 }];
 
@@ -72,6 +90,7 @@ ipcMain.on('request:content', (e, uri) => {
     dialog.showOpenDialog({
         properties: ["openDirectory"]
     }).then(dir => {
+        if (dir.canceled) return;
         const request = require('request');
         request({
             uri: uri.indexOf('//') == 0 ? 'https:' + uri : uri,
@@ -82,7 +101,7 @@ ipcMain.on('request:content', (e, uri) => {
             strictSSL: false
         }, (error, response, body) => {
             let links = [];
-            let link_tags = body.match(/<link[\s]+([^>]+)>/gmi);
+            let link_tags = body && body !== '' ? body.match(/<link[\s]+([^>]+)>/gmi) : [];
 
             if (link_tags !== null) {
                 link_tags.forEach(link => {
@@ -90,11 +109,10 @@ ipcMain.on('request:content', (e, uri) => {
                     if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
                         const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
                         if (isUrlAbsolute(temp_array[2])) {
-                            links.push(temp_array[2]);
+                            links.push(temp_array[2].indexOf('//') == 0 ? (new URL(uri)).protocol + temp_array[2] : temp_array[2]);
                         } else {
                             const url = require('url');
                             links.push(url.resolve(uri, temp_array[2]));
-                            //links.push(new URL(temp_array[2], 'http://lab.volpi.ru/examples/').href);
                         }
                     }
                 });
@@ -102,14 +120,14 @@ ipcMain.on('request:content', (e, uri) => {
 
             mainWindow.webContents.send(
                 'http:body',
-                body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;'),
+                body ? body.replace(/</gm, '&lt;').replace(/>/gm, '&gt;') : '',
                 links,
                 link_tags
             );
 
             // /<[^>]+href\s*=\s*['"]([^'"]+)['"][^>]*>/gm
 
-            saveFile(path.join(dir.filePaths[0], 'save.log'), '');
+            if (links.length !== 0) saveFile(path.join(dir.filePaths[0], 'save.log'), '');
             links.forEach(link => {
                 request({
                     uri: link.indexOf('//') == 0 ? (new URL(uri)).protocol + link : link,
@@ -133,7 +151,7 @@ ipcMain.on('request:content', (e, uri) => {
 
                     mainWindow.webContents.send(
                         'request:result',
-                        'URI: ' + temp_uri,
+                        temp_uri,
                         'StatusCode: ' + res,
                         'Error: ' + err
                     );

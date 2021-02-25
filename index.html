@@ -98,7 +98,11 @@
         });
 
         ipcRenderer.on('request:result', (e, uri, response, err) => {
-            $('.page_out').append('<p>' + uri + '<br>' + response + '<br>' + err + ' ' + '</p>');
+            $('.page_out').append('<p>' + 'URI: <a class="link" href="' + uri + '">' + uri + '</a><br>' + response + '<br>' + err + ' ' + '</p>');
+            $('.link').last().on('click', () => {
+                const open = require('open');
+                open(uri);
+            });
         });
     </script>
 </body>
