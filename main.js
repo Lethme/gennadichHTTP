@@ -92,6 +92,7 @@ ipcMain.on('request:content', (e, uri) => {
                 if (result === 1) return;
             }
 
+            showLoader();
             request({
                 uri: uri.indexOf('//') == 0 ? 'https:' + uri : uri,
                 method: 'GET',
@@ -120,7 +121,7 @@ ipcMain.on('request:content', (e, uri) => {
                 if (link_tags !== null) {
                     link_tags.forEach(link => {
                         let temp_array = (new RegExp(/href=(["'])(.*?)\1/gi)).exec(link);
-                        if (temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
+                        if (temp_array && temp_array[2].includes('.css') && temp_array.input.includes('stylesheet')) {
                             const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
                             if (isUrlAbsolute(temp_array[2])) {
                                 links.push(temp_array[2].indexOf('//') == 0 ? (new URL(uri)).protocol + temp_array[2] : temp_array[2]);
@@ -182,6 +183,8 @@ ipcMain.on('request:content', (e, uri) => {
                         }
                     });
                 });
+
+                hideLoader();
             });
         });
     });
