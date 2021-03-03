@@ -65,10 +65,6 @@ app.on('ready', () => {
     });
 });
 
-ipcMain.on('item:test', (e, item) => {
-    mainWindow.webContents.send('item:test', item);
-});
-
 ipcMain.on('request:content', (e, uri) => {
     dialog.showOpenDialog({
         properties: ["openDirectory"]
@@ -109,7 +105,7 @@ ipcMain.on('request:content', (e, uri) => {
                         defaultId: 0,
                         title: 'Request error',
                         message: 'Invalid URI',
-                        detail: 'Did you write URI correctly?',
+                        detail: response && response.statusCode + '\n' + error,
                         noLink: true
                     });
                     return;

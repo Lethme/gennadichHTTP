@@ -31,6 +31,8 @@ body {
     flex-direction: column;
     text-align: center;
     overflow: hidden;
+    /* background: url('../img/bg.jpg') no-repeat center center;
+    background-size: cover; */
 }
 
 #page {
@@ -163,6 +165,7 @@ body {
     align-items: center;
     flex-direction: column;
     background: #000A;
+    user-select: none;
 }
 
 .loading-svg {
@@ -173,4 +176,7 @@ body {
 .logo {
     width: 100%;
     max-width: 150px;
+    height: 100%;
+    max-height: 80px;
+    margin: 0;
 }
