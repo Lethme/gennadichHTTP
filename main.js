@@ -101,7 +101,7 @@ ipcMain.on('request:content', (e, uri) => {
                 agent: false,
                 strictSSL: false
             }, (error, response, body) => {
-                if (error && error.toString().includes('ENOTFOUND')) {
+                if ((error && error.toString().includes('ENOTFOUND')) || (response && (response.statusCode.toString().match(/^4\d\d$/) || response.statusCode.toString().match(/^5\d\d$/)))) {
                     hideLoader();
                     dialog.showMessageBoxSync({
                         type: 'error',
@@ -168,8 +168,8 @@ ipcMain.on('request:content', (e, uri) => {
                         mainWindow.webContents.send(
                             'request:result',
                             temp_uri,
-                            'StatusCode: ' + res,
-                            'Error: ' + err
+                            res !== undefined ? 'StatusCode: ' + res : '',
+                            err !== null ? 'Error: ' + err : ''
                         );
 
                         if (err === null && response.statusCode.toString().match(/^2\d\d$/)) {

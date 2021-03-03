@@ -20,9 +20,12 @@
 
 <body>
     <div id="page">
+        <object class="logo" type="image/svg+xml" data="assets/img/logo.svg">
+            Here should be application logo but something went wrong...
+        </object>
         <h3>HTTP Client</h3>
         <form id="test_form">
-            <label style="font-size: 1.5em;">Enter File URI</label>
+            <label style="font-size: 1.5em;">Enter URI</label>
             <input type="text" id="uri" value="http://lab.volpi.ru/examples/testpage.htm" autofocus>
             <button class="form-btn" type="submit" name="action">Send Request</button>
         </form>
@@ -112,7 +115,13 @@
         });
 
         ipcRenderer.on('request:result', (e, uri, response, err) => {
-            $('.page_out').append('<p>' + 'URI: <a class="link" href="#">' + uri + '</a><br>' + response + '<br>' + err + ' ' + '</p>');
+            if (response === '') {
+                $('.page_out').append('<p>' + 'URI: <a class="link" href="#">' + uri + '</a><br>' + err + '</p>');
+            } else if (err === '') {
+                $('.page_out').append('<p>' + 'URI: <a class="link" href="#">' + uri + '</a><br>' + response + '</p>');
+            } else {
+                $('.page_out').append('<p>' + 'URI: <a class="link" href="#">' + uri + '</a><br>' + response + '<br>' + err + '</p>');
+            }
             $('.link').last().on('click', (e) => {
                 const open = require('open');
                 (async() => {

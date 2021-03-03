@@ -146,6 +146,7 @@ body {
 ::-webkit-scrollbar-thumb {
     background: #569993;
     border-radius: 1px;
+    transition: all .1s ease;
 }
 
 ::-webkit-scrollbar-thumb:active {
@@ -167,4 +168,9 @@ body {
 .loading-svg {
     width: 100%;
     max-width: 100px;
+}
+
+.logo {
+    width: 100%;
+    max-width: 150px;
 }
